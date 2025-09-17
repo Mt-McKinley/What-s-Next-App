@@ -33,7 +33,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.whats_next_app.model.Appointment
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -51,12 +55,45 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentTrackerScreen(navController: NavController) {
+    var showAddAppointmentDialog by remember { mutableStateOf(false) }
+    var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    // Convert to mutable state so we can update the list when deleting appointments
     val appointments = remember {
-        listOf(
-            "Oncologist - Dr. Smith - Tomorrow, 2:00 PM",
-            "Radiation Therapy - City Hospital - Sep 22, 10:00 AM",
-            "Blood Work - Medical Lab - Sep 25, 8:30 AM",
-            "Follow-up - Dr. Johnson - Oct 5, 3:15 PM"
+        mutableStateOf(
+            listOf(
+                Appointment(
+                    id = 1,
+                    title = "Oncology Consultation",
+                    doctorName = "Dr. Smith",
+                    dateTime = Date().time + 86400000, // Tomorrow
+                    location = "Memorial Cancer Center - Room 305",
+                    notes = "Bring recent test results and list of current medications",
+                    questions = listOf("What are the treatment options?", "What side effects should I expect?"),
+                    isCompleted = false
+                ),
+                Appointment(
+                    id = 2,
+                    title = "Radiation Therapy",
+                    doctorName = "Dr. Johnson",
+                    dateTime = Date().time + 4 * 86400000, // 4 days from now
+                    location = "City Hospital - Radiation Oncology Dept",
+                    notes = "First treatment session. Arrive 15 minutes early to complete paperwork.",
+                    questions = listOf("How long will each session take?", "How many sessions will I need?"),
+                    isCompleted = false
+                ),
+                Appointment(
+                    id = 3,
+                    title = "Blood Work",
+                    doctorName = "Lab Technician",
+                    dateTime = Date().time + 8 * 86400000, // 8 days from now
+                    location = "Medical Laboratory - 2nd Floor",
+                    notes = "Fasting required 8 hours before appointment",
+                    questions = listOf(),
+                    isCompleted = false
+                )
+            )
         )
     }
 
@@ -73,7 +110,10 @@ fun AppointmentTrackerScreen(navController: NavController) {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { /* Add appointment functionality */ },
+                onClick = {
+                    selectedAppointment = null // Ensure we're adding a new appointment
+                    showAddAppointmentDialog = true
+                },
                 icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                 text = { Text("Add Appointment") }
             )
@@ -85,7 +125,7 @@ fun AppointmentTrackerScreen(navController: NavController) {
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.background
         ) {
-            if (appointments.isEmpty()) {
+            if (appointments.value.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -113,29 +153,109 @@ fun AppointmentTrackerScreen(navController: NavController) {
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(appointments) { appointment ->
+                    items(appointments.value) { appointment ->
                         AppointmentCard(
                             appointment = appointment,
-                            onEdit = { /* Edit appointment */ },
-                            onDelete = { /* Delete appointment */ }
+                            onEdit = {
+                                // Show edit dialog with the selected appointment
+                                selectedAppointment = appointment
+                                showAddAppointmentDialog = true
+                            },
+                            onDelete = {
+                                // Show delete confirmation dialog
+                                selectedAppointment = appointment
+                                showDeleteConfirmDialog = true
+                            },
+                            onClick = {
+                                // Show appointment details
+                                selectedAppointment = appointment
+                            }
                         )
                     }
                 }
             }
         }
     }
+
+    // Show appointment details dialog when an appointment is selected
+    if (selectedAppointment != null && !showAddAppointmentDialog && !showDeleteConfirmDialog) {
+        AppointmentDetailDialog(
+            appointment = selectedAppointment!!,
+            onDismiss = { selectedAppointment = null },
+            onEdit = {
+                // Keep the selected appointment and show the edit dialog
+                showAddAppointmentDialog = true
+            }
+        )
+    }
+
+    // Show add/edit appointment dialog
+    if (showAddAppointmentDialog) {
+        AddEditAppointmentDialog(
+            appointment = selectedAppointment,
+            onDismiss = {
+                showAddAppointmentDialog = false
+                // If we were editing, keep the details dialog open
+                if (selectedAppointment != null && !showAddAppointmentDialog) {
+                    selectedAppointment = null
+                }
+            },
+            onSave = { newAppointment ->
+                // Save the new or updated appointment
+                val updatedList = appointments.value.toMutableList()
+                if (selectedAppointment != null) {
+                    // Update existing appointment
+                    val index = updatedList.indexOfFirst { it.id == selectedAppointment!!.id }
+                    if (index != -1) {
+                        updatedList[index] = newAppointment
+                    }
+                } else {
+                    // Add new appointment
+                    updatedList.add(newAppointment.copy(id = updatedList.size + 1))
+                }
+                appointments.value = updatedList
+                showAddAppointmentDialog = false
+                selectedAppointment = null
+            }
+        )
+    }
+
+    // Show delete confirmation dialog
+    if (showDeleteConfirmDialog && selectedAppointment != null) {
+        DeleteAppointmentDialog(
+            appointment = selectedAppointment!!,
+            onDismiss = {
+                showDeleteConfirmDialog = false
+                selectedAppointment = null
+            },
+            onConfirmDelete = {
+                // Delete the appointment from the list
+                val updatedList = appointments.value.toMutableList()
+                updatedList.remove(selectedAppointment)
+                appointments.value = updatedList
+
+                showDeleteConfirmDialog = false
+                selectedAppointment = null
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentCard(
-    appointment: String,
+    appointment: Appointment,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onClick: () -> Unit
 ) {
+    val dateFormat = SimpleDateFormat("EEE, MMM d, yyyy 'at' h:mm a", Locale.getDefault())
+    val formattedDate = dateFormat.format(Date(appointment.dateTime))
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -157,7 +277,7 @@ fun AppointmentCard(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(
-                        text = appointment,
+                        text = appointment.title,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -180,6 +300,284 @@ fun AppointmentCard(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "With: ${appointment.doctorName}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = formattedDate,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Location: ${appointment.location}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            if (appointment.notes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Notes: ${appointment.notes}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (appointment.questions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Questions to Ask:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                appointment.questions.forEach { question ->
+                    Text(
+                        text = "• $question",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+fun AppointmentDetailDialog(
+    appointment: Appointment,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit
+) {
+    val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm a", Locale.getDefault())
+    val formattedDate = dateFormat.format(Date(appointment.dateTime))
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(appointment.title) },
+        text = {
+            Column {
+                Text(
+                    text = "With: ${appointment.doctorName}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = formattedDate,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Location: ${appointment.location}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                if (appointment.notes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Notes:",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = appointment.notes,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                if (appointment.questions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Questions to Ask:",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+
+                    appointment.questions.forEach { question ->
+                        Row(
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                text = question,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onEdit,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Edit")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddEditAppointmentDialog(
+    appointment: Appointment?,
+    onDismiss: () -> Unit,
+    onSave: (Appointment) -> Unit
+) {
+    val isEditing = appointment != null
+    val title = remember { mutableStateOf(appointment?.title ?: "") }
+    val doctorName = remember { mutableStateOf(appointment?.doctorName ?: "") }
+    val location = remember { mutableStateOf(appointment?.location ?: "") }
+    val notes = remember { mutableStateOf(appointment?.notes ?: "") }
+    val dateTime = remember { mutableStateOf(appointment?.dateTime ?: Date().time) }
+
+    // In a real app, you would have date/time pickers for the date and time fields
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (isEditing) "Edit Appointment" else "Add New Appointment") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Title field
+                Text(
+                    text = "Title",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                TextField(
+                    value = title.value,
+                    onValueChange = { title.value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g., Oncology Consultation") }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Doctor name field
+                Text(
+                    text = "Doctor/Provider",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                TextField(
+                    value = doctorName.value,
+                    onValueChange = { doctorName.value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g., Dr. Smith") }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Location field
+                Text(
+                    text = "Location",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                TextField(
+                    value = location.value,
+                    onValueChange = { location.value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g., Memorial Cancer Center - Room 305") }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Notes field
+                Text(
+                    text = "Notes",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                TextField(
+                    value = notes.value,
+                    onValueChange = { notes.value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Any special instructions or notes") },
+                    minLines = 3
+                )
+
+                // In a complete implementation, you would add fields for:
+                // - Date picker
+                // - Time picker
+                // - Question list with add/remove functionality
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    // In a real app, you would validate the input and create/update the appointment
+                    // Here we're just creating a simple placeholder appointment
+                    val newAppointment = Appointment(
+                        id = appointment?.id ?: 0,
+                        title = title.value,
+                        doctorName = doctorName.value,
+                        dateTime = dateTime.value,
+                        location = location.value,
+                        notes = notes.value,
+                        questions = appointment?.questions ?: listOf(),
+                        isCompleted = appointment?.isCompleted ?: false
+                    )
+                    onSave(newAppointment)
+                },
+                enabled = title.value.isNotBlank() && doctorName.value.isNotBlank()
+            ) {
+                Text(if (isEditing) "Update" else "Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun DeleteAppointmentDialog(
+    appointment: Appointment,
+    onDismiss: () -> Unit,
+    onConfirmDelete: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Deletion") },
+        text = { Text("Are you sure you want to delete the appointment with ${appointment.doctorName}? This action cannot be undone.") },
+        confirmButton = {
+            Button(
+                onClick = onConfirmDelete,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

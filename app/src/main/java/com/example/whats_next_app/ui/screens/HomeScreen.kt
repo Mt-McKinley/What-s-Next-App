@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.AlertDialog
@@ -57,11 +58,10 @@ fun HomeScreen(navController: NavController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
+                content = { Icon(Icons.Default.Add, contentDescription = "Add") },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
-            }
+            )
         }
     ) { innerPadding ->
         Surface(
@@ -481,10 +481,21 @@ fun EmergencyContactButton(onClick: () -> Unit) {
             contentColor = MaterialTheme.colorScheme.onErrorContainer
         )
     ) {
-        Text(
-            text = "Emergency Contacts",
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
             modifier = Modifier.padding(vertical = 8.dp)
-        )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "Emergency",
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text(
+                text = "Emergency Contacts",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
     }
 }
 

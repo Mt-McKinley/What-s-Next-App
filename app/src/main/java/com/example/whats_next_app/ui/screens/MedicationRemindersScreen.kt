@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -47,12 +48,17 @@ import androidx.navigation.NavController
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicationRemindersScreen(navController: NavController) {
+    var showAddMedicationDialog by remember { mutableStateOf(false) }
+    var selectedMedication by remember { mutableStateOf<String?>(null) }
+
     val medications = remember {
-        listOf(
-            "Paclitaxel - 1 tablet - 9:00 AM",
-            "Dexamethasone - 2 tablets - 8:00 PM",
-            "Ondansetron - 1 tablet - As needed for nausea",
-            "Lorazepam - 1 tablet - Before chemotherapy"
+        mutableStateOf(
+            listOf(
+                "Paclitaxel - 1 tablet - 9:00 AM",
+                "Dexamethasone - 2 tablets - 8:00 PM",
+                "Ondansetron - 1 tablet - As needed for nausea",
+                "Lorazepam - 1 tablet - Before chemotherapy"
+            )
         )
     }
 
@@ -69,7 +75,10 @@ fun MedicationRemindersScreen(navController: NavController) {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { /* Add medication functionality */ },
+                onClick = {
+                    selectedMedication = null // Ensure we're adding a new medication
+                    showAddMedicationDialog = true
+                },
                 icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                 text = { Text("Add Medication") }
             )
@@ -81,7 +90,7 @@ fun MedicationRemindersScreen(navController: NavController) {
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.background
         ) {
-            if (medications.isEmpty()) {
+            if (medications.value.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -118,11 +127,19 @@ fun MedicationRemindersScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    items(medications) { medication ->
+                    items(medications.value) { medication ->
                         MedicationCard(
                             medication = medication,
-                            onEdit = { /* Edit medication */ },
-                            onDelete = { /* Delete medication */ }
+                            onEdit = {
+                                selectedMedication = medication
+                                showAddMedicationDialog = true
+                            },
+                            onDelete = {
+                                // Create a new list without the deleted medication
+                                val updatedList = medications.value.toMutableList()
+                                updatedList.remove(medication)
+                                medications.value = updatedList
+                            }
                         )
                     }
 
@@ -145,6 +162,32 @@ fun MedicationRemindersScreen(navController: NavController) {
                 }
             }
         }
+    }
+
+    // Show add/edit medication dialog
+    if (showAddMedicationDialog) {
+        AddMedicationDialog(
+            medication = selectedMedication,
+            onDismiss = { showAddMedicationDialog = false },
+            onSave = { newMedication ->
+                if (selectedMedication != null) {
+                    // Editing existing medication
+                    val updatedList = medications.value.toMutableList()
+                    val index = updatedList.indexOf(selectedMedication)
+                    if (index != -1) {
+                        updatedList[index] = newMedication
+                        medications.value = updatedList
+                    }
+                } else {
+                    // Adding new medication
+                    val updatedList = medications.value.toMutableList()
+                    updatedList.add(newMedication)
+                    medications.value = updatedList
+                }
+                showAddMedicationDialog = false
+                selectedMedication = null
+            }
+        )
     }
 }
 
@@ -205,4 +248,94 @@ fun MedicationCard(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddMedicationDialog(
+    medication: String?,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    val isEditing = medication != null
+
+    // Split the medication string into its components if we're editing
+    val parts = medication?.split(" - ") ?: listOf("", "", "")
+
+    var medicationName by remember { mutableStateOf(if (parts.size > 0) parts[0] else "") }
+    var dosage by remember { mutableStateOf(if (parts.size > 1) parts[1] else "") }
+    var schedule by remember { mutableStateOf(if (parts.size > 2) parts[2] else "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (isEditing) "Edit Medication" else "Add New Medication") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Medication name field
+                Text(
+                    text = "Medication Name",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                androidx.compose.material3.TextField(
+                    value = medicationName,
+                    onValueChange = { medicationName = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g., Paclitaxel") },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Dosage field
+                Text(
+                    text = "Dosage",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                androidx.compose.material3.TextField(
+                    value = dosage,
+                    onValueChange = { dosage = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g., 1 tablet") },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Schedule field
+                Text(
+                    text = "Schedule",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                androidx.compose.material3.TextField(
+                    value = schedule,
+                    onValueChange = { schedule = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g., 9:00 AM or As needed") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.Button(
+                onClick = {
+                    // Combine the fields into a medication string
+                    val newMedication = "$medicationName - $dosage - $schedule"
+                    onSave(newMedication)
+                },
+                enabled = medicationName.isNotBlank() && dosage.isNotBlank() && schedule.isNotBlank()
+            ) {
+                Text(if (isEditing) "Update" else "Save")
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
