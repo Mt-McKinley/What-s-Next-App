@@ -1,6 +1,7 @@
 package com.example.whats_next_app.navigation
 
 sealed class Screen(val route: String) {
+    object Splash : Screen("splash") // Adding the splash screen route
     object Home : Screen("home")
     object JourneyGuide : Screen("journey_guide")
     object AppointmentTracker : Screen("appointments")

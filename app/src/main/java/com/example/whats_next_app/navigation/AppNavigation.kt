@@ -18,6 +18,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -34,6 +37,7 @@ import com.example.whats_next_app.ui.screens.JourneyGuideScreen
 import com.example.whats_next_app.ui.screens.MedicationRemindersScreen
 import com.example.whats_next_app.ui.screens.ProfileScreen
 import com.example.whats_next_app.ui.screens.ResourceLibraryScreen
+import com.example.whats_next_app.ui.screens.SplashScreen
 
 data class BottomNavItem(
     val name: String,
@@ -45,6 +49,16 @@ data class BottomNavItem(
 fun WhatsNextAppNavigation() {
     val navController = rememberNavController()
 
+    // Track whether to show bottom navigation or not
+    var showBottomBar by remember { mutableStateOf(false) }
+
+    // Update bottom bar visibility based on current route
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    showBottomBar = when (currentRoute) {
+        Screen.Splash.route -> false
+        else -> true
+    }
+
     val bottomNavItems = listOf(
         BottomNavItem("Home", Screen.Home.route, Icons.Default.Home),
         BottomNavItem("Journey", Screen.JourneyGuide.route, Icons.Default.Route),
@@ -54,13 +68,28 @@ fun WhatsNextAppNavigation() {
     )
 
     Scaffold(
-        bottomBar = { WhatsNextBottomNavigation(navController, bottomNavItems) }
+        bottomBar = {
+            if (showBottomBar) {
+                WhatsNextBottomNavigation(navController, bottomNavItems)
+            }
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Splash.route,  // Changed to start with splash screen
             modifier = Modifier.padding(innerPadding)
         ) {
+            // Splash screen with navigation to Home when complete
+            composable(Screen.Splash.route) {
+                SplashScreen(
+                    onSplashComplete = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
             composable(Screen.Home.route) {
                 HomeScreen(navController)
             }

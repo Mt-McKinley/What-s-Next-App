@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.WhatsNextApp" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash screen theme -->
+    <style name="Theme.WhatsNextApp.SplashScreen" parent="Theme.WhatsNextApp">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
 </resources>

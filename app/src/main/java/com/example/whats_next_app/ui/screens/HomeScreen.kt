@@ -400,7 +400,10 @@ fun JourneyProgressCard(stage: String, onClick: () -> Unit) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
     ) {
         Row(
             modifier = Modifier
@@ -412,7 +415,7 @@ fun JourneyProgressCard(stage: String, onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Route,
                 contentDescription = "Journey",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.secondary
             )
 
             // Journey information
@@ -423,18 +426,20 @@ fun JourneyProgressCard(stage: String, onClick: () -> Unit) {
             ) {
                 Text(
                     text = "Your Cancer Journey",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
 
                 Text(
                     text = "Current Stage: $stage",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
 
                 Text(
                     text = "Tap to view guidance for this stage",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                 )
             }
         }
@@ -459,7 +464,10 @@ fun UpcomingAppointmentsCard(
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
@@ -479,7 +487,8 @@ fun UpcomingAppointmentsCard(
                 Text(
                     text = "Appointments",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -493,7 +502,8 @@ fun UpcomingAppointmentsCard(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 // Display all appointments as clickable items
@@ -503,7 +513,10 @@ fun UpcomingAppointmentsCard(
                     }
                     TextButton(
                         onClick = { onAppointmentClick(appointment) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
                         Text(
                             text = appointment,
@@ -534,7 +547,10 @@ fun UpcomingMedicationsCard(
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        )
     ) {
         Column(
             modifier = Modifier
@@ -554,7 +570,8 @@ fun UpcomingMedicationsCard(
                 Text(
                     text = "Today's Medications",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
 
@@ -568,7 +585,8 @@ fun UpcomingMedicationsCard(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             } else {
                 // Display all medications as clickable items
@@ -578,7 +596,10 @@ fun UpcomingMedicationsCard(
                     }
                     TextButton(
                         onClick = { onMedicationClick(medication) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
                         Text(
                             text = medication,
@@ -603,7 +624,10 @@ fun ResourcesCard(onClick: () -> Unit) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+        )
     ) {
         Column(
             modifier = Modifier
@@ -617,13 +641,14 @@ fun ResourcesCard(onClick: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.Route,
                     contentDescription = "Resources",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.secondary
                 )
 
                 Text(
                     text = "Resources & Education",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
 
@@ -632,7 +657,8 @@ fun ResourcesCard(onClick: () -> Unit) {
             // Description of available resources
             Text(
                 text = "Access helpful articles, videos, and support groups",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
     }
@@ -688,7 +714,7 @@ fun DailyQuoteCard(quote: String, author: String) {
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -698,7 +724,7 @@ fun DailyQuoteCard(quote: String, author: String) {
                 color = MaterialTheme.colorScheme.onTertiaryContainer
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = "— $author",

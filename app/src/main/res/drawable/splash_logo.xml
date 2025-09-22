@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+
+    <!-- Soft pink background circle -->
+    <path
+        android:fillColor="#F8BBD0"
+        android:pathData="M120,120m-120,0a120,120 0,1 1,240 0a120,120 0,1 1,-240 0" />
+
+    <!-- Pastel blue inner circle -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M120,120m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0" />
+
+    <!-- Pastel orange heart shape for "care" -->
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M120,80 C140,60 180,90 160,120 C140,150 120,170 120,170 C120,170 100,150 80,120 C60,90 100,60 120,80 Z" />
+</vector>
+

@@ -16,41 +16,41 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = DeepBlue,
-    secondary = DarkSage,
-    tertiary = WarmTaupe,
+    primary = DeepPink,
+    secondary = DeepBlue,
+    tertiary = DeepOrange,
     background = DarkBackground,
     surface = DarkSurface,
-    error = MutedPeach,
-    onPrimary = SoftSurface,
-    onSecondary = SoftSurface,
-    onTertiary = SoftSurface,
-    onBackground = SoftSurface,
-    onSurface = SoftSurface,
-    onError = SoftSurface,
-    primaryContainer = DeepBlue.copy(alpha = 0.7f),
-    secondaryContainer = DarkSage.copy(alpha = 0.7f),
-    tertiaryContainer = WarmTaupe.copy(alpha = 0.7f),
-    errorContainer = MutedPeach.copy(alpha = 0.7f)
+    error = MauveAccent,
+    onPrimary = PureWhite,
+    onSecondary = PureWhite,
+    onTertiary = PureWhite,
+    onBackground = PureWhite,
+    onSurface = PureWhite,
+    onError = DarkSurface,
+    primaryContainer = DeepPink.copy(alpha = 0.7f),
+    secondaryContainer = DeepBlue.copy(alpha = 0.7f),
+    tertiaryContainer = DeepOrange.copy(alpha = 0.7f),
+    errorContainer = MauveAccent.copy(alpha = 0.7f)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = CalmBlue,
-    secondary = SoftSage,
-    tertiary = WarmSand,
+    primary = SoftPink,
+    secondary = PastelBlue,
+    tertiary = PastelOrange,
     background = SoftBackground,
-    surface = SoftSurface,
-    error = PeachAccent,
-    onPrimary = SoftSurface,
-    onSecondary = SoftSurface,
+    surface = PureWhite,
+    error = DeepPink,
+    onPrimary = DarkBackground,
+    onSecondary = DarkBackground,
     onTertiary = DarkBackground,
     onBackground = DarkBackground,
     onSurface = DarkBackground,
-    onError = SoftSurface,
-    primaryContainer = CalmBlue.copy(alpha = 0.15f),
-    secondaryContainer = SoftSage.copy(alpha = 0.15f),
-    tertiaryContainer = WarmSand.copy(alpha = 0.3f),
-    errorContainer = PeachAccent.copy(alpha = 0.15f)
+    onError = PureWhite,
+    primaryContainer = SoftPink.copy(alpha = 0.3f),
+    secondaryContainer = PastelBlue.copy(alpha = 0.3f),
+    tertiaryContainer = PastelOrange.copy(alpha = 0.3f),
+    errorContainer = LighterPink.copy(alpha = 0.3f)
 )
 
 @Composable
