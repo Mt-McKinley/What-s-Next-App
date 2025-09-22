@@ -1,5 +1,7 @@
+// filepath: c:\Users\disne\AndroidStudioProjects\WhatsNextApp\app\src\main\java\com\example\whats_next_app\ui\screens\AppointmentTrackerScreen.kt
 package com.example.whats_next_app.ui.screens
 
+// Layout and UI component imports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,14 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+
+// Material icons for UI actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+
+// Material Design 3 components
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,68 +44,69 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
+
+// State management and composition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
+// UI layout and configuration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+
+// Navigation
 import androidx.navigation.NavController
+
+// App-specific models
 import com.example.whats_next_app.model.Appointment
+
+// Date handling
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Screen for managing medical appointments
+ * Features:
+ * - View list of upcoming appointments
+ * - Add new appointments
+ * - Edit existing appointments
+ * - Delete appointments
+ * - First-time user guidance
+ *
+ * @param navController Navigation controller for screen transitions
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentTrackerScreen(navController: NavController) {
+    // Dialog visibility states
     var showAddAppointmentDialog by remember { mutableStateOf(false) }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
-    // Convert to mutable state so we can update the list when deleting appointments
+    // State for storing the list of appointments
+    // Empty by default until user adds appointments
     val appointments = remember {
-        mutableStateOf(
-            listOf(
-                Appointment(
-                    id = 1,
-                    title = "Oncology Consultation",
-                    doctorName = "Dr. Smith",
-                    dateTime = Date().time + 86400000, // Tomorrow
-                    location = "Memorial Cancer Center - Room 305",
-                    notes = "Bring recent test results and list of current medications",
-                    questions = listOf("What are the treatment options?", "What side effects should I expect?"),
-                    isCompleted = false
-                ),
-                Appointment(
-                    id = 2,
-                    title = "Radiation Therapy",
-                    doctorName = "Dr. Johnson",
-                    dateTime = Date().time + 4 * 86400000, // 4 days from now
-                    location = "City Hospital - Radiation Oncology Dept",
-                    notes = "First treatment session. Arrive 15 minutes early to complete paperwork.",
-                    questions = listOf("How long will each session take?", "How many sessions will I need?"),
-                    isCompleted = false
-                ),
-                Appointment(
-                    id = 3,
-                    title = "Blood Work",
-                    doctorName = "Lab Technician",
-                    dateTime = Date().time + 8 * 86400000, // 8 days from now
-                    location = "Medical Laboratory - 2nd Floor",
-                    notes = "Fasting required 8 hours before appointment",
-                    questions = listOf(),
-                    isCompleted = false
-                )
-            )
-        )
+        mutableStateOf(emptyList<Appointment>())
     }
 
+    // Track if first-time guidance has been shown using SharedPreferences
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("WhatsNextApp", 0) }
+    val hasSeenGuidance = remember { prefs.getBoolean("has_seen_appointment_guidance", false) }
+
+    // Show guidance dialog for first-time users only when they have no appointments
+    var showGuidanceDialog by remember { mutableStateOf(appointments.value.isEmpty() && !hasSeenGuidance) }
+
+    // Main scaffold with top app bar and floating action button
     Scaffold(
         topBar = {
+            // App bar with back navigation
             TopAppBar(
                 title = { Text("Appointment Tracker") },
                 navigationIcon = {
@@ -109,13 +117,16 @@ fun AppointmentTrackerScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
+            // Button to add a new appointment
             ExtendedFloatingActionButton(
                 onClick = {
-                    selectedAppointment = null // Ensure we're adding a new appointment
+                    selectedAppointment = null
                     showAddAppointmentDialog = true
                 },
                 icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                text = { Text("Add Appointment") }
+                text = { Text("Add Appointment") },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     ) { innerPadding ->
@@ -125,6 +136,7 @@ fun AppointmentTrackerScreen(navController: NavController) {
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.background
         ) {
+            // Content displayed when there are no appointments
             if (appointments.value.isEmpty()) {
                 Column(
                     modifier = Modifier
@@ -133,20 +145,55 @@ fun AppointmentTrackerScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = "No upcoming appointments",
-                        style = MaterialTheme.typography.titleLarge
+                    // Icon indicating no appointments
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .padding(bottom = 16.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                    // Title for the empty state
                     Text(
-                        text = "Tap the + button to add your first appointment",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "No Appointments Yet",
+                        style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Instruction text for adding the first appointment
+                    Text(
+                        text = "Keep track of all your medical appointments in one place. Tap the '+' button to add your first appointment.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Button to add the first appointment
+                    Button(
+                        onClick = {
+                            selectedAppointment = null
+                            showAddAppointmentDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Add First Appointment")
+                    }
                 }
             } else {
+                // List of appointments
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -154,20 +201,18 @@ fun AppointmentTrackerScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(appointments.value) { appointment ->
+                        // Individual appointment card
                         AppointmentCard(
                             appointment = appointment,
                             onEdit = {
-                                // Show edit dialog with the selected appointment
                                 selectedAppointment = appointment
                                 showAddAppointmentDialog = true
                             },
                             onDelete = {
-                                // Show delete confirmation dialog
                                 selectedAppointment = appointment
                                 showDeleteConfirmDialog = true
                             },
                             onClick = {
-                                // Show appointment details
                                 selectedAppointment = appointment
                             }
                         )
@@ -175,6 +220,63 @@ fun AppointmentTrackerScreen(navController: NavController) {
                 }
             }
         }
+    }
+
+    // First-time user guidance dialog
+    if (showGuidanceDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // Save that user has seen the guidance
+                prefs.edit().putBoolean("has_seen_appointment_guidance", true).apply()
+                showGuidanceDialog = false
+            },
+            title = { Text("Track Your Appointments") },
+            text = {
+                Column {
+                    Text(
+                        "The Appointment Tracker helps you:",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("• Keep all your medical appointments in one place")
+                    Text("• Set reminders for upcoming appointments")
+                    Text("• Store important notes and questions for each visit")
+                    Text("• Track your medical journey over time")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        "Get started by adding your first appointment using the '+' button.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Save that user has seen the guidance
+                        prefs.edit().putBoolean("has_seen_appointment_guidance", true).apply()
+                        showGuidanceDialog = false
+                        showAddAppointmentDialog = true
+                    }
+                ) {
+                    Text("Add Appointment")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        // Save that user has seen the guidance
+                        prefs.edit().putBoolean("has_seen_appointment_guidance", true).apply()
+                        showGuidanceDialog = false
+                    }
+                ) {
+                    Text("Got it")
+                }
+            }
+        )
     }
 
     // Show appointment details dialog when an appointment is selected

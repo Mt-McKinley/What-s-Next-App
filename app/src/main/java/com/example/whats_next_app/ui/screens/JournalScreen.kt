@@ -1,5 +1,6 @@
 package com.example.whats_next_app.ui.screens
 
+// Layout and UI component imports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,15 +9,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+
+// Material icons for UI actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
+
+// Material Design 3 components
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,61 +40,67 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
+
+// State management and composition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
+// UI layout and configuration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
+// Navigation
 import androidx.navigation.NavController
+
+// Date handling
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Screen for managing journal entries about the cancer journey
+ * Features:
+ * - Record thoughts, feelings, symptoms, and experiences
+ * - View past journal entries chronologically
+ * - Edit and delete entries
+ * - First-time user guidance
+ *
+ * @param navController Navigation controller for screen transitions
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JournalScreen(navController: NavController) {
-    // Add state for managing dialogs and selected entry
+    // Dialog visibility and entry selection states
     var showAddEntryDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var selectedEntry by remember { mutableStateOf<JournalEntryData?>(null) }
     var showEntryDetailDialog by remember { mutableStateOf(false) }
 
-    // Convert to mutable state so we can add/edit/delete entries
+    // State for storing the list of journal entries
+    // Empty by default until user adds entries
     val journalEntries = remember {
-        mutableStateOf(
-            listOf(
-                JournalEntryData(
-                    id = 1,
-                    title = "First day of treatment",
-                    date = Date(System.currentTimeMillis() - (3 * 24 * 60 * 60 * 1000)),
-                    content = "Today was my first chemotherapy session. I was nervous but the staff were very supportive. Feeling tired but hopeful.",
-                    mood = "Hopeful"
-                ),
-                JournalEntryData(
-                    id = 2,
-                    title = "Follow-up appointment",
-                    date = Date(System.currentTimeMillis() - (1 * 24 * 60 * 60 * 1000)),
-                    content = "Had my follow-up with Dr. Smith. She was pleased with my progress. Blood counts looking better than expected.",
-                    mood = "Relieved"
-                ),
-                JournalEntryData(
-                    id = 3,
-                    title = "New symptoms",
-                    date = Date(),
-                    content = "Noticed some new side effects today. Mild nausea and fatigue. Need to discuss with nurse at next appointment.",
-                    mood = "Concerned"
-                )
-            )
-        )
+        mutableStateOf(emptyList<JournalEntryData>())
     }
 
+    // Track if first-time guidance has been shown using SharedPreferences
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("WhatsNextApp", 0) }
+    val hasSeenGuidance = remember { prefs.getBoolean("has_seen_journal_guidance", false) }
+
+    // Show guidance dialog for first-time users only when they have no entries
+    var showGuidanceDialog by remember { mutableStateOf(journalEntries.value.isEmpty() && !hasSeenGuidance) }
+
+    // Main scaffold with top app bar and floating action button
     Scaffold(
         topBar = {
+            // App bar with back navigation
             TopAppBar(
                 title = { Text("Journal") },
                 navigationIcon = {
@@ -99,6 +111,7 @@ fun JournalScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
+            // Button to add a new journal entry
             ExtendedFloatingActionButton(
                 onClick = {
                     // Clear selection to ensure we're adding a new entry
@@ -106,7 +119,9 @@ fun JournalScreen(navController: NavController) {
                     showAddEntryDialog = true
                 },
                 icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                text = { Text("New Entry") }
+                text = { Text("New Entry") },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     ) { innerPadding ->
@@ -116,6 +131,7 @@ fun JournalScreen(navController: NavController) {
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.background
         ) {
+            // Content displayed when there are no journal entries
             if (journalEntries.value.isEmpty()) {
                 Column(
                     modifier = Modifier
@@ -124,20 +140,55 @@ fun JournalScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = "Your journal is empty",
-                        style = MaterialTheme.typography.titleLarge
+                    // Journal icon
+                    Icon(
+                        imageVector = Icons.Default.EditNote,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .padding(bottom = 16.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                    // Title text
                     Text(
-                        text = "Start tracking your journey by adding your first entry",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Your Journal is Empty",
+                        style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Instruction text
+                    Text(
+                        text = "Start documenting your journey by writing your first entry. Track your thoughts, feelings, and experiences.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Button to write the first entry
+                    Button(
+                        onClick = {
+                            selectedEntry = null
+                            showAddEntryDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Write First Entry")
+                    }
                 }
             } else {
+                // List of journal entries
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -145,6 +196,7 @@ fun JournalScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(journalEntries.value) { entry ->
+                        // Individual journal entry card
                         JournalEntryCard(
                             entry = entry,
                             onClick = {
@@ -164,6 +216,63 @@ fun JournalScreen(navController: NavController) {
                 }
             }
         }
+    }
+
+    // First-time user guidance dialog
+    if (showGuidanceDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // Save that user has seen the guidance
+                prefs.edit().putBoolean("has_seen_journal_guidance", true).apply()
+                showGuidanceDialog = false
+            },
+            title = { Text("Your Personal Journal") },
+            text = {
+                Column {
+                    Text(
+                        "Your journal is a private space to:",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("• Document your daily experiences")
+                    Text("• Track your thoughts and feelings")
+                    Text("• Record questions for your medical team")
+                    Text("• Celebrate milestones and progress")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        "Start by writing your first journal entry using the '+' button.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Save that user has seen the guidance
+                        prefs.edit().putBoolean("has_seen_journal_guidance", true).apply()
+                        showGuidanceDialog = false
+                        showAddEntryDialog = true
+                    }
+                ) {
+                    Text("Write Entry")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        // Save that user has seen the guidance
+                        prefs.edit().putBoolean("has_seen_journal_guidance", true).apply()
+                        showGuidanceDialog = false
+                    }
+                ) {
+                    Text("Got it")
+                }
+            }
+        )
     }
 
     // Show journal entry details dialog
@@ -231,6 +340,7 @@ fun JournalScreen(navController: NavController) {
     }
 }
 
+// Data class representing a journal entry
 data class JournalEntryData(
     val id: Int,
     val title: String,
@@ -239,6 +349,7 @@ data class JournalEntryData(
     val mood: String
 )
 
+// Composable function for displaying a single journal entry card
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JournalEntryCard(
@@ -262,11 +373,13 @@ fun JournalEntryCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Entry title
                 Text(
                     text = entry.title,
                     style = MaterialTheme.typography.titleLarge
                 )
 
+                // Entry mood
                 Text(
                     text = "Mood: ${entry.mood}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -274,6 +387,7 @@ fun JournalEntryCard(
                 )
             }
 
+            // Entry date
             Text(
                 text = dateFormat.format(entry.date),
                 style = MaterialTheme.typography.bodySmall,
@@ -282,6 +396,7 @@ fun JournalEntryCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Entry content preview
             Text(
                 text = entry.content,
                 style = MaterialTheme.typography.bodyMedium,
@@ -295,6 +410,7 @@ fun JournalEntryCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
+                // Edit button
                 IconButton(onClick = onEdit) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -303,6 +419,7 @@ fun JournalEntryCard(
                     )
                 }
 
+                // Delete button
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -315,6 +432,7 @@ fun JournalEntryCard(
     }
 }
 
+// Composable function for displaying journal entry details in a dialog
 @Composable
 fun JournalEntryDetailDialog(
     entry: JournalEntryData,
@@ -329,6 +447,7 @@ fun JournalEntryDetailDialog(
         title = { Text(entry.title) },
         text = {
             Column {
+                // Entry date
                 Text(
                     text = formattedDate,
                     style = MaterialTheme.typography.bodySmall,
@@ -337,6 +456,7 @@ fun JournalEntryDetailDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Entry mood
                 Text(
                     text = "Mood: ${entry.mood}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -345,6 +465,7 @@ fun JournalEntryDetailDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Entry content
                 Text(
                     text = entry.content,
                     style = MaterialTheme.typography.bodyMedium
@@ -366,6 +487,7 @@ fun JournalEntryDetailDialog(
     )
 }
 
+// Composable function for adding or editing a journal entry
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditJournalEntryDialog(
@@ -455,6 +577,7 @@ fun AddEditJournalEntryDialog(
     )
 }
 
+// Composable function for confirming journal entry deletion
 @Composable
 fun DeleteJournalEntryDialog(
     entry: JournalEntryData,

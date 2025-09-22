@@ -1,5 +1,6 @@
 package com.example.whats_next_app.ui.screens
 
+// Layout and UI component imports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,8 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+
+// Material icons for UI actions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -19,6 +23,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Medication
+
+// Material Design 3 components
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -35,35 +41,54 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.TextButton
+
+// State management and composition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
+// UI layout and configuration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+
+// Navigation
 import androidx.navigation.NavController
 
+/**
+ * Screen for managing medication reminders
+ * Features:
+ * - Track and manage all medications
+ * - Set up dosage information and schedules
+ * - Mark medications as taken
+ * - Add, edit, and remove medications
+ *
+ * @param navController Navigation controller for screen transitions
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicationRemindersScreen(navController: NavController) {
+    // Dialog state for adding/editing medications
     var showAddMedicationDialog by remember { mutableStateOf(false) }
+
+    // Currently selected medication for editing
     var selectedMedication by remember { mutableStateOf<String?>(null) }
 
+    // State for storing medication list
+    // Empty by default until user adds medications
     val medications = remember {
         mutableStateOf(
-            listOf(
-                "Paclitaxel - 1 tablet - 9:00 AM",
-                "Dexamethasone - 2 tablets - 8:00 PM",
-                "Ondansetron - 1 tablet - As needed for nausea",
-                "Lorazepam - 1 tablet - Before chemotherapy"
-            )
+            emptyList<String>()
         )
     }
 
+    // Main scaffold with top app bar and floating action button
     Scaffold(
         topBar = {
+            // App bar with back navigation
             TopAppBar(
                 title = { Text("Medication Reminders") },
                 navigationIcon = {
@@ -74,13 +99,16 @@ fun MedicationRemindersScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
+            // Button to add a new medication
             ExtendedFloatingActionButton(
                 onClick = {
                     selectedMedication = null // Ensure we're adding a new medication
                     showAddMedicationDialog = true
                 },
                 icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                text = { Text("Add Medication") }
+                text = { Text("Add Medication") },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     ) { innerPadding ->
@@ -90,6 +118,7 @@ fun MedicationRemindersScreen(navController: NavController) {
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.background
         ) {
+            // Show empty state when no medications exist
             if (medications.value.isEmpty()) {
                 Column(
                     modifier = Modifier
@@ -98,6 +127,7 @@ fun MedicationRemindersScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    // Empty state message
                     Text(
                         text = "No medications scheduled",
                         style = MaterialTheme.typography.titleLarge
@@ -105,6 +135,7 @@ fun MedicationRemindersScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Instruction for adding first medication
                     Text(
                         text = "Tap the + button to add your medications",
                         style = MaterialTheme.typography.bodyMedium,
@@ -112,12 +143,14 @@ fun MedicationRemindersScreen(navController: NavController) {
                     )
                 }
             } else {
+                // List of medications
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Today's medications section
                     item {
                         Text(
                             text = "Today's Medications",
@@ -127,6 +160,7 @@ fun MedicationRemindersScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
+                    // List of current medications
                     items(medications.value) { medication ->
                         MedicationCard(
                             medication = medication,
@@ -143,6 +177,7 @@ fun MedicationRemindersScreen(navController: NavController) {
                         )
                     }
 
+                    // Upcoming medications section (currently empty)
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -164,7 +199,7 @@ fun MedicationRemindersScreen(navController: NavController) {
         }
     }
 
-    // Show add/edit medication dialog
+    // Show add/edit medication dialog when requested
     if (showAddMedicationDialog) {
         AddMedicationDialog(
             medication = selectedMedication,
@@ -191,12 +226,20 @@ fun MedicationRemindersScreen(navController: NavController) {
     }
 }
 
+/**
+ * Card representing a single medication with checkbox for completion
+ *
+ * @param medication The medication string in format "Name - Dosage - Schedule"
+ * @param onEdit Callback when edit button is clicked
+ * @param onDelete Callback when delete button is clicked
+ */
 @Composable
 fun MedicationCard(
     medication: String,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    // State to track whether medication has been taken
     var isCompleted by remember { mutableStateOf(false) }
 
     ElevatedCard(
@@ -210,9 +253,11 @@ fun MedicationCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Medication info with checkbox
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Checkbox to mark as taken
                 Checkbox(
                     checked = isCompleted,
                     onCheckedChange = { isCompleted = it }
@@ -220,16 +265,20 @@ fun MedicationCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                // Medication details
                 Column {
                     Text(
                         text = medication,
                         style = MaterialTheme.typography.titleMedium,
+                        // Gray out text when completed
                         color = if (isCompleted) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
+            // Action buttons
             Row {
+                // Edit button
                 IconButton(onClick = onEdit) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -238,6 +287,7 @@ fun MedicationCard(
                     )
                 }
 
+                // Delete button
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -250,6 +300,13 @@ fun MedicationCard(
     }
 }
 
+/**
+ * Dialog for adding or editing medication information
+ *
+ * @param medication Existing medication string if editing, null if adding new
+ * @param onDismiss Callback when dialog is dismissed
+ * @param onSave Callback when medication is saved with the new medication string
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMedicationDialog(
@@ -262,6 +319,7 @@ fun AddMedicationDialog(
     // Split the medication string into its components if we're editing
     val parts = medication?.split(" - ") ?: listOf("", "", "")
 
+    // State for medication information fields
     var medicationName by remember { mutableStateOf(if (parts.size > 0) parts[0] else "") }
     var dosage by remember { mutableStateOf(if (parts.size > 1) parts[1] else "") }
     var schedule by remember { mutableStateOf(if (parts.size > 2) parts[2] else "") }
@@ -315,15 +373,16 @@ fun AddMedicationDialog(
                     value = schedule,
                     onValueChange = { schedule = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g., 9:00 AM or As needed") },
+                    placeholder = { Text("e.g., Every morning with food") },
                     singleLine = true
                 )
             }
         },
         confirmButton = {
-            androidx.compose.material3.Button(
+            // Save button
+            TextButton(
                 onClick = {
-                    // Combine the fields into a medication string
+                    // Combine fields into a single medication string
                     val newMedication = "$medicationName - $dosage - $schedule"
                     onSave(newMedication)
                 },
@@ -333,7 +392,8 @@ fun AddMedicationDialog(
             }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
+            // Cancel button
+            TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
         }
