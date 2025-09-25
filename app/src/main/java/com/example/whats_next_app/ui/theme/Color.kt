@@ -17,3 +17,8 @@ val DeepOrange = Color(0xFFFF7043) // Deeper orange for tertiary elements
 val MauveAccent = Color(0xFFCE93D8) // Mauve accent for dark theme
 val DarkBackground = Color(0xFF121212) // Dark background
 val DarkSurface = Color(0xFF1E1E1E) // Dark surface color
+
+// New colors for updated design
+val MintGreen = Color(0xFF98D3C5) // Mint green for the app title
+val SalmonPink = Color(0xFFFFA07A) // Salmon pink for category cards
+val LightGray = Color(0xFFF5F5F5) // Light gray for search bar background

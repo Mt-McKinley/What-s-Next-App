@@ -10,7 +10,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 
 // Material icon imports for UI elements
 import androidx.compose.material.icons.Icons
@@ -19,6 +31,10 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Help
 
 // Material design component imports
 import androidx.compose.material3.AlertDialog
@@ -36,6 +52,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.OutlinedTextField
 
 // State management imports
 import androidx.compose.runtime.Composable
@@ -47,10 +66,21 @@ import androidx.compose.runtime.setValue
 // UI configuration imports
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // Navigation imports
 import androidx.navigation.NavController
@@ -59,155 +89,220 @@ import androidx.navigation.compose.rememberNavController
 // App-specific imports
 import com.example.whats_next_app.navigation.Screen
 import com.example.whats_next_app.ui.theme.WhatsNextAppTheme
+import com.example.whats_next_app.ui.theme.MintGreen
+import com.example.whats_next_app.ui.theme.SalmonPink
+import com.example.whats_next_app.ui.theme.LightGray
+
+// Import for R class to resolve resource references
+import com.example.whats_next_app.R
 
 // Date formatting imports
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// Data structure for category cards
+data class CategoryCard(
+    val title: String,
+    val icon: ImageVector,
+    val route: String
+)
+
+/**
+ * Color palette for the flowchart design
+ * Based on the pink, yellow, and orange theme from the provided flowchart
+ */
+private val FlowchartPink = Color(0xFFE91E63)       // Primary pink color
+private val FlowchartYellow = Color(0xFFFFD700)     // Yellow accent color
+private val FlowchartOrange = Color(0xFFFFB347)     // Orange accent color
+private val FlowchartBlue = Color(0xFF90CAF9)       // Light blue accent color
+private val FlowchartLightSalmon = Color(0xFFFFA07A) // Light salmon accent color
+private val FlowchartCreamBackground = Color(0xFFFFF8E1) // Light cream background
+private val FlowchartCompletedGreen = Color(0xFF8BC34A) // Completed stage green
+private val FlowchartErrorRed = Color(0xFFF44336)   // Error/emergency red
+
 /**
  * Main home screen of the What's Next app.
  * This is the central hub that displays all main features of the app including:
- * - Welcome section with date and user info
- * - Cancer journey progress
- * - Upcoming appointments
- * - Medication reminders
- * - Resource access
- * - Inspirational quotes
- * - Emergency contacts access
+ * - "What's Next" app header with origami logo
+ * - Search bar for finding information
+ * - Category cards arranged in a grid layout for easy access
+ * - Help button in bottom corner
  *
  * @param navController Navigation controller to handle screen transitions
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
-    // State for controlling the add action dialog visibility
-    var showAddDialog by remember { mutableStateOf(false) }
-    // State for tracking which action was selected from a card
-    var selectedAction by remember { mutableStateOf("") }
+    // State for search field
+    var searchText by remember { mutableStateOf("") }
 
-    // State for appointments and medications lists
-    // Empty by default - will be populated when user adds items
-    val appointments = remember { mutableStateOf(emptyList<String>()) }
-    val medications = remember { mutableStateOf(emptyList<String>()) }
+    // Define category cards data
+    val categories = listOf(
+        CategoryCard("Medical Staff", Icons.Default.Info, Screen.ResourceLibrary.route),
+        CategoryCard("Care Hacks", Icons.Default.Help, Screen.ResourceLibrary.route),
+        CategoryCard("First Steps", Icons.Default.Route, Screen.ResourceLibrary.route),
+        CategoryCard("Appointments", Icons.Default.CalendarMonth, Screen.AppointmentTracker.route),
+        CategoryCard("Medications", Icons.Default.Medication, Screen.MedicationReminders.route),
+        CategoryCard("Journal", Icons.Default.Info, Screen.Journal.route),
+        CategoryCard("Emergency", Icons.Default.Info, Screen.EmergencyContacts.route),
+        CategoryCard("Resources", Icons.Default.Help, Screen.ResourceLibrary.route),
+        CategoryCard("My Journey", Icons.Default.Route, Screen.JourneyGuide.route)
+    )
 
-    // Main scaffold layout with floating action button
     Scaffold(
         floatingActionButton = {
-            // Global add button that shows options dialog
             FloatingActionButton(
-                onClick = { showAddDialog = true },
-                content = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+                onClick = { /* Show help dialog */ },
+                containerColor = MintGreen,
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Text(
+                    text = "?",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                )
+            }
         }
     ) { innerPadding ->
-        // Main content area
         Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            color = MaterialTheme.colorScheme.background
+            color = Color.White // White background as in the image
         ) {
-            // Scrollable content with cards for different features
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Welcome card with date and profile access
-                item {
-                    WelcomeCard(onProfileClick = { navController.navigate(Screen.Profile.route) })
-                }
-
-                // Cancer journey progress tracking
-                item {
-                    JourneyProgressCard(
-                        stage = "Getting Started",
-                        onClick = { navController.navigate(Screen.JourneyGuide.route) }
-                    )
-                }
-
-                // Section header for upcoming items
-                item {
+                // App header with mint green title and origami bird logo
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = "Your Upcoming",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                        text = "What's Next?",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Normal,
+                            color = MintGreen,
+                            fontSize = 36.sp
+                        ),
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
+                    // Origami bird logo
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OrigamiBirdLogo(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .padding(4.dp)
                     )
                 }
 
-                // Upcoming appointments card
-                item {
-                    UpcomingAppointmentsCard(
-                        appointments = appointments.value,
-                        onClick = { navController.navigate(Screen.AppointmentTracker.route) },
-                        onAppointmentClick = { appointment ->
-                            selectedAction = "View appointment: $appointment"
-                            showAddDialog = true
-                        }
-                    )
-                }
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // Today's medications card
-                item {
-                    UpcomingMedicationsCard(
-                        medications = medications.value,
-                        onClick = { navController.navigate(Screen.MedicationReminders.route) },
-                        onMedicationClick = { medication ->
-                            selectedAction = "Take medication: $medication"
-                            showAddDialog = true
-                        }
-                    )
-                }
+                // Search bar
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp)),
+                    placeholder = { Text("Search") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = Color.Gray
+                        )
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = LightGray,
+                        unfocusedContainerColor = LightGray,
+                        disabledContainerColor = LightGray,
+                        focusedIndicatorColor = MintGreen,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true
+                )
 
-                // Resources and education access
-                item {
-                    ResourcesCard(
-                        onClick = { navController.navigate(Screen.ResourceLibrary.route) }
-                    )
-                }
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // Inspirational quote card
-                item {
-                    DailyQuoteCard(
-                        quote = "Every journey begins with a single step. We're here to help you take yours.",
-                        author = "Dr. Lisa Baker, \"What's Next\""
-                    )
-                }
-
-                // Emergency contacts button (highlighted with error colors for visibility)
-                item {
-                    EmergencyContactButton(
-                        onClick = { navController.navigate(Screen.EmergencyContacts.route) }
-                    )
+                // Category grid cards
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(categories) { category ->
+                        CategoryItemCard(
+                            title = category.title,
+                            icon = category.icon,
+                            onClick = { navController.navigate(category.route) }
+                        )
+                    }
                 }
             }
         }
     }
+}
 
-    // Show action dialog when the add button is clicked or an item is selected
-    if (showAddDialog) {
-        ActionDialog(
-            // Dialog title and message change based on whether an action was selected
-            title = if (selectedAction.isEmpty()) "What would you like to add?" else "Action",
-            message = if (selectedAction.isEmpty()) "Choose an option below" else selectedAction,
-            onDismiss = { showAddDialog = false },
-            onAppointment = {
-                navController.navigate(Screen.AppointmentTracker.route)
-                showAddDialog = false
-            },
-            onMedication = {
-                navController.navigate(Screen.MedicationReminders.route)
-                showAddDialog = false
-            },
-            onJournal = {
-                navController.navigate(Screen.Journal.route)
-                showAddDialog = false
-            },
-            // Only show options when no specific action was selected
-            showOptions = selectedAction.isEmpty()
+/**
+ * A card representing a category item in the home screen grid
+ * Styled to match the salmon/peach colored cards in the image
+ *
+ * @param title The category title
+ * @param icon The icon for this category
+ * @param onClick Callback when this category is clicked
+ */
+@Composable
+fun CategoryItemCard(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        // Salmon colored image placeholder
+        Card(
+            modifier = Modifier
+                .size(width = 90.dp, height = 70.dp)
+                .clip(RoundedCornerShape(12.dp)),
+            colors = CardDefaults.cardColors(
+                containerColor = SalmonPink
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Category title below the image
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SalmonPink,
+            textAlign = TextAlign.Center,
+            maxLines = 1
         )
     }
 }
@@ -267,143 +362,185 @@ fun ActionDialog(
 }
 
 /**
- * Welcome card that displays at the top of the home screen
- * Shows app title, current date, welcome message, and profile access
- * Also handles the first-time user welcome dialog
- *
- * @param onProfileClick Callback when profile button is clicked
+ * Styled header card based on the flowchart design
+ * Uses the pink color block style from the flowchart
  */
 @Composable
-fun WelcomeCard(onProfileClick: () -> Unit) {
-    // State for username (currently not populated)
-    val username = remember { mutableStateOf("") }
-
-    // Use SharedPreferences to track if the welcome dialog has been shown before
-    val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("WhatsNextApp", 0) }
-    val hasSeenWelcomeDialog = remember { prefs.getBoolean("has_seen_welcome_dialog", false) }
-
-    // Only show welcome dialog if user hasn't seen it before
-    val showWelcomeDialog = remember { mutableStateOf(!hasSeenWelcomeDialog) }
-
-    // Main welcome card
+fun FlowchartHeaderCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+            containerColor = FlowchartPink // Pink from flowchart
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // App title
             Text(
                 text = "What's Next",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Current date
             val date = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()).format(Date())
             Text(
                 text = date,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = Color.White
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Welcome message and profile access
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Personalized welcome or generic welcome
-                Text(
-                    text = if (username.value.isBlank()) "Welcome to your journey" else "Welcome, ${username.value}",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+            Text(
+                text = "Your Cancer Journey Companion",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = Color.White
                 )
-
-                // Profile button
-                TextButton(onClick = onProfileClick) {
-                    Text("Profile")
-                }
-            }
+            )
         }
-    }
-
-    // First-time user welcome dialog with app explanation
-    if (showWelcomeDialog.value) {
-        AlertDialog(
-            onDismissRequest = {
-                // Save that user has seen the welcome dialog
-                prefs.edit().putBoolean("has_seen_welcome_dialog", true).apply()
-                showWelcomeDialog.value = false
-            },
-            title = { Text("Welcome to What's Next") },
-            text = {
-                Column {
-                    // App introduction
-                    Text(
-                        "This companion app is based on Dr. Lisa Baker's book \"What's Next\" and is designed to help you navigate your cancer journey.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Feature summary
-                    Text(
-                        "You can use this app to:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text("• Track your appointments")
-                    Text("• Manage your medications")
-                    Text("• Keep a journal of your experiences")
-                    Text("• Access resources and guidance")
-                    Text("• Store emergency contacts")
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Save that user has seen the welcome dialog
-                        prefs.edit().putBoolean("has_seen_welcome_dialog", true).apply()
-                        showWelcomeDialog.value = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Get Started")
-                }
-            }
-        )
     }
 }
 
 /**
- * Card that displays the user's cancer journey progress
- * Shows current stage and links to journey guidance
+ * Styled card for each journey stage in the cancer journey flowchart
  *
- * @param stage The current stage in the cancer journey
- * @param onClick Callback when card is clicked to view journey guidance
+ * @param stage The name of the journey stage
+ * @param isCompleted Whether this stage has been completed
+ * @param isCurrentStage Whether this is the current active stage
+ * @param onClick Callback when the stage card is clicked
+ */
+@Composable
+fun JourneyStageCard(
+    stage: String,
+    isCompleted: Boolean = false,
+    isCurrentStage: Boolean = false,
+    onClick: () -> Unit
+) {
+    // Define colors based on stage status
+    val backgroundColor = when {
+        isCurrentStage -> FlowchartPink // Current stage is highlighted in pink
+        isCompleted -> FlowchartCompletedGreen // Completed is green
+        else -> Color.LightGray // Future stages are gray
+    }
+
+    val textColor = Color.White
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = backgroundColor
+            ),
+            onClick = onClick
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Status indicator
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            color = if (isCompleted) Color.White else Color.Transparent,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .border(
+                            width = 2.dp,
+                            color = textColor,
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isCompleted) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Completed",
+                            tint = backgroundColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else if (isCurrentStage) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .background(
+                                    color = Color.White,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Stage name
+                Text(
+                    text = stage,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = textColor,
+                        fontWeight = if (isCurrentStage) FontWeight.Bold else FontWeight.Normal
+                    )
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Arrow indicator
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "View details",
+                    tint = textColor
+                )
+            }
+        }
+
+        // Add connector line between cards to show the flow
+        if (!isCompleted || isCurrentStage) {
+            Box(
+                modifier = Modifier
+                    .height(16.dp)
+                    .width(2.dp)
+                    .background(backgroundColor)
+            )
+        }
+    }
+}
+
+/**
+ * Styled card for the side path options in the flowchart
+ *
+ * @param title The name of the side path option
+ * @param icon The icon to display for this option
+ * @param backgroundColor The background color for this option's block
+ * @param onClick Callback when the option is clicked
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JourneyProgressCard(stage: String, onClick: () -> Unit) {
+fun SidePathCard(
+    title: String,
+    icon: ImageVector,
+    backgroundColor: Color,
+    onClick: () -> Unit
+) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+            containerColor = backgroundColor
+        ),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier
@@ -411,279 +548,54 @@ fun JourneyProgressCard(stage: String, onClick: () -> Unit) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Journey icon
             Icon(
-                imageVector = Icons.Default.Route,
-                contentDescription = "Journey",
-                tint = MaterialTheme.colorScheme.secondary
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
             )
 
-            // Journey information
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp)
-            ) {
-                Text(
-                    text = "Your Cancer Journey",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+            Spacer(modifier = Modifier.width(16.dp))
 
-                Text(
-                    text = "Current Stage: $stage",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-
-                Text(
-                    text = "Tap to view guidance for this stage",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                )
-            }
-        }
-    }
-}
-
-/**
- * Card that displays upcoming appointments
- * Shows a list of appointments or a message if none exist
- *
- * @param appointments List of appointment strings to display
- * @param onClick Callback when the card is clicked to go to appointments screen
- * @param onAppointmentClick Callback when a specific appointment is clicked
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun UpcomingAppointmentsCard(
-    appointments: List<String>,
-    onClick: () -> Unit,
-    onAppointmentClick: (String) -> Unit
-) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Card header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = "Appointments",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Text(
-                    text = "Appointments",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Show placeholder message if no appointments exist
-            if (appointments.isEmpty()) {
-                Text(
-                    text = "No upcoming appointments. Tap the '+' button to add your first appointment.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                // Display all appointments as clickable items
-                appointments.forEachIndexed { index, appointment ->
-                    if (index > 0) {
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    }
-                    TextButton(
-                        onClick = { onAppointmentClick(appointment) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text(
-                            text = appointment,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Card that displays today's medications
- * Shows a list of medications or a message if none exist
- *
- * @param medications List of medication strings to display
- * @param onClick Callback when the card is clicked to go to medications screen
- * @param onMedicationClick Callback when a specific medication is clicked
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun UpcomingMedicationsCard(
-    medications: List<String>,
-    onClick: () -> Unit,
-    onMedicationClick: (String) -> Unit
-) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Card header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Medication,
-                    contentDescription = "Medications",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Text(
-                    text = "Today's Medications",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Show placeholder message if no medications exist
-            if (medications.isEmpty()) {
-                Text(
-                    text = "No medications scheduled for today. Tap the '+' button to add your first medication.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            } else {
-                // Display all medications as clickable items
-                medications.forEachIndexed { index, medication ->
-                    if (index > 0) {
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    }
-                    TextButton(
-                        onClick = { onMedicationClick(medication) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text(
-                            text = medication,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Card that provides access to resources and education
- * Informs users about available articles, videos, and support groups
- *
- * @param onClick Callback when the card is clicked to go to resources screen
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ResourcesCard(onClick: () -> Unit) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Card header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Route,
-                    contentDescription = "Resources",
-                    tint = MaterialTheme.colorScheme.secondary
-                )
-
-                Text(
-                    text = "Resources & Education",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 16.dp),
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Description of available resources
             Text(
-                text = "Access helpful articles, videos, and support groups",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                text = title,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = "View details",
+                tint = Color.White
             )
         }
     }
 }
 
 /**
- * Button that navigates to emergency contacts screen
- * Highlighted with error colors to indicate importance
+ * Styled emergency contact button based on the flowchart design
+ * Uses the red color block for emphasis
  *
- * @param onClick Callback when the button is clicked
+ * @param onClick Callback when the emergency button is clicked
  */
 @Composable
-fun EmergencyContactButton(onClick: () -> Unit) {
+fun FlowchartEmergencyContactButton(onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer
-        )
+            containerColor = FlowchartErrorRed // Red for emergency
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 12.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Info,
@@ -692,7 +604,10 @@ fun EmergencyContactButton(onClick: () -> Unit) {
             )
             Text(
                 text = "Emergency Contacts",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             )
         }
     }
@@ -701,6 +616,7 @@ fun EmergencyContactButton(onClick: () -> Unit) {
 /**
  * Card that displays an inspirational quote of the day
  * Encourages and motivates users in their cancer journey
+ * Styled to match flowchart design
  *
  * @param quote The quote text to display
  * @param author The author of the quote
@@ -710,8 +626,9 @@ fun DailyQuoteCard(quote: String, author: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
+            containerColor = FlowchartLightSalmon.copy(alpha = 0.7f)
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -719,21 +636,43 @@ fun DailyQuoteCard(quote: String, author: String) {
         ) {
             Text(
                 text = "\"$quote\"",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                ),
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = "— $author",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.White
+                ),
                 textAlign = TextAlign.Center
             )
         }
     }
+}
+
+/**
+ * A custom origami bird logo using the PNG image resource
+ *
+ * @param modifier Modifier to be applied to the Image
+ */
+@Composable
+fun OrigamiBirdLogo(modifier: Modifier = Modifier) {
+    // Create a custom painter to directly load the PNG image resource
+    val context = LocalContext.current
+    val resourceId = context.resources.getIdentifier("origami_bird", "drawable", context.packageName)
+
+    Image(
+        painter = painterResource(id = resourceId),
+        contentDescription = "Origami Bird Logo",
+        modifier = modifier,
+        contentScale = ContentScale.Fit
+    )
 }
 
 @Preview(showBackground = true)
