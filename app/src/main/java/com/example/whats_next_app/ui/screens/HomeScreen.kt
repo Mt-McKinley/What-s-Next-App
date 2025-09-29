@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Book
 
 // Material design component imports
 import androidx.compose.material3.AlertDialog
@@ -81,6 +82,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.net.Uri
 
 // Navigation imports
 import androidx.navigation.NavController
@@ -249,6 +252,13 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
                 }
+
+                // Book link widget for the "What's Next" book
+                BookLinkWidget(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                )
             }
         }
     }
@@ -673,6 +683,89 @@ fun OrigamiBirdLogo(modifier: Modifier = Modifier) {
         modifier = modifier,
         contentScale = ContentScale.Fit
     )
+}
+
+/**
+ * A widget that displays a link to the "What's Next" book on Amazon
+ * When clicked, it opens the Amazon link in the user's web browser
+ *
+ * @param modifier Modifier to be applied to the widget
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BookLinkWidget(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val amazonBookUrl = "https://www.amazon.com/Whats-Next-Navigating-Extended-Hospital/dp/196267438X/"
+
+    ElevatedCard(
+        onClick = {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(amazonBookUrl))
+            context.startActivity(intent)
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = FlowchartBlue.copy(alpha = 0.8f)
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Book,
+                contentDescription = "Book",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "What's Next?: Navigating Your Child's Extended Hospital Journey",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "By Dr. Lisa Baker",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.White
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Get the book on Amazon",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = "Open Link",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)
